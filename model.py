@@ -33,7 +33,7 @@ def seasonal_feature(dates, period, fourier_order, name):
     columns = ['{}_delim_{}'.format(name, i + 1) for i in range(features.shape[1])]
     return pd.DataFrame(features, columns=columns)
     
-def make_seasonality_features(history, yearly=True, weekly=True, holidays=None, prior_scale=10.0):
+def make_seasonality_features(history, yearly=True, weekly=True, holidays=None, prior_scale=5.0):
     start = history['ds'].min()
     end = history['ds'].max()
     dt = history['ds'].diff()
@@ -43,8 +43,8 @@ def make_seasonality_features(history, yearly=True, weekly=True, holidays=None, 
     prior_scales = []
     
     # Year seasonality
-    yearly_disable = end - start < pd.Timedelta(days=730)
-    if yearly or not yearly_disable:
+    # yearly_disable = end - start < pd.Timedelta(days=730)
+    if yearly:
         features = seasonal_feature(history['ds'],
                                     period=365.25,
                                     fourier_order=10,
@@ -54,9 +54,9 @@ def make_seasonality_features(history, yearly=True, weekly=True, holidays=None, 
         
     
     # Weekly seasonality
-    weekly_disable = ((end - start < pd.Timedelta(weeks=2)) or
-                      (min_dt >= pd.Timedelta(weeks=1)))
-    if weekly or not weekly_disable:
+    # weekly_disable = ((end - start < pd.Timedelta(weeks=2)) or
+    #                  (min_dt >= pd.Timedelta(weeks=1)))
+    if weekly:
         features = seasonal_feature(history['ds'],
                                     period=7,
                                     fourier_order=3,
