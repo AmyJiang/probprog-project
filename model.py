@@ -160,3 +160,10 @@ def get_changepoint_matrix(df, changepoints_t):
     for i, t_i in enumerate(changepoints_t):
         A[df['t'].values >= t_i, i] = 1
     return A
+
+def init_km(df):
+    i0, i1 = df['ds'].idxmin(), df['ds'].idxmax()
+    T = df['t'].iloc[i1] - df['t'].iloc[i0]
+    k = (df['y_scaled'].iloc[i1] - df['y_scaled'].iloc[i0]) / T
+    m = df['y_scaled'].iloc[i0] -  k * df['t'].iloc[i0]
+    return (k, m)
