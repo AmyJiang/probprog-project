@@ -2,20 +2,36 @@ import numpy as np
 import pandas as pd
 from collections import defaultdict
 from datetime import timedelta
+ 
+holiday_en_us = pd.DataFrame({
+  'holiday': 'US public holiday',
+  'ds': pd.to_datetime(['2015-01-01', '2015-01-19', '2015-05-25', '2015-07-03', '2015-09-07', '2015-11-26', '2015-11-27', '2015-12-25', '2016-01-01', '2016-01-18', '2016-05-30', '2016-07-04', '2016-09-05', '2016-11-11', '2016-11-24', '2016-12-26', '2017-01-01', '2017-01-02', '2017-01-16', '2017-05-29', '2017-07-04', '2017-09-04', '2017-11-10', '2017-11-23', '2017-12-25', '2015-02-14', '2016-02-14', '2017-02-14']),
+  'lower_window': -1,
+  'upper_window': 0,
+  'prior_scale': 10.0
+})
 
 # Helper functions
 def setup_dataframe(df):
-    # basic checks and setup
+    """ basic checks and setup """
+    # Log tranform views to y
+    df["y"] = df["views"].astype(float)
+    df["y"] = np.log(df["y"])
+    
     df = df[df['y'].notnull()].copy()
     df['y'] = pd.to_numeric(df['y'])
     if np.isinf(df['y'].values).any():
         raise ValueError("Found infinity in column y")
+    
+    # transform ds to pd.DateTime
     df['ds'] = pd.to_datetime(df['ds'])
     if df['ds'].isnull().any():
         raise ValueError("Found NaN in column ds")
+    
     df = df.sort_values('ds')
     df.reset_index(inplace=True, drop=True)
     return df
+
 
 def fourier_series(dates, period, order):
     # to days since epoch
@@ -160,10 +176,3 @@ def get_changepoint_matrix(df, changepoints_t):
     for i, t_i in enumerate(changepoints_t):
         A[df['t'].values >= t_i, i] = 1
     return A
-
-def init_km(df):
-    i0, i1 = df['ds'].idxmin(), df['ds'].idxmax()
-    T = df['t'].iloc[i1] - df['t'].iloc[i0]
-    k = (df['y_scaled'].iloc[i1] - df['y_scaled'].iloc[i0]) / T
-    m = df['y_scaled'].iloc[i0] -  k * df['t'].iloc[i0]
-    return (k, m)
