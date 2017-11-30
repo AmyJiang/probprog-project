@@ -6,6 +6,19 @@ import matplotlib.pyplot as plt
 
 from utils import *
 
+def get_timeseries(path):
+    df = pd.read_csv(path)
+    timeseries = {}
+    print("Loading timeseries:")
+    for i, row in df.iterrows():
+        ts = pd.DataFrame({"ds": row.index[1:], "views": row.values[1:]})
+        timeseries[row.Page] = ts
+#         print(row.Page)
+        #plt.plot(ts["ds"], np.log(ts["y"]))
+        #plt.xticks(rotation=90)
+        #plt.show()
+    return timeseries
+
 def split_train_test(df, sdate=pd.datetime(2017, 7, 10), edate=None):
     ''' Split timeseries dataframe into train (history) and test (future) '''
     
@@ -78,7 +91,7 @@ def predict(y, posts_dict, data_dict, SAMPLE=500):
     sess = ed.get_session()
     y_post = ed.copy(y, posts_dict) 
     y_pred = np.array([sess.run([y_post], 
-                                feed_dict=data_dict) for _ in range(SAMPLE)]).mean(axis=0)[0]
+                                feed_dict=data_dict) for _ in range(SAMPLE)])
     return y_pred
 
 
@@ -93,13 +106,16 @@ def get_posts(params, posts, i=None):
             p.update({ params[-1][k]:v for k, v in posts[-1].items() })
         return p
     
-def pipeline(ts_data, model, train_data, test_data, ITR=5000):
+def pipeline(ts_data, model, train_data, test_data, ITR=5000, CI = 20, STEP_SIZE = 7e-4, N_STEPS = 10):
     print("[+] Building model")
     model.set_values(len(ts_data),                        # number of timeseries
                      len(train_data["t_change"]),         # number of change points
                      train_data["X"].shape[1])            # number of seasonal factors
     model.build_model()
     model.build_posts(ITR, ts_data)
+    
+    CI_l = CI
+    CI_u = 100-CI_l
     
     print("[+] Running inference")
     with tf.name_scope(model.name):
@@ -113,7 +129,7 @@ def pipeline(ts_data, model, train_data, test_data, ITR=5000):
         
         posts_dict = get_posts(model.params, model.posts)
         inference = ed.HMC(posts_dict, data=data_dict)
-        inference.run(step_size=5e-4)
+        inference.run(step_size=STEP_SIZE, n_steps=N_STEPS)
             
         print("[+] Making prediction")
         test_data_dict = {model.data[k]:v for k, v in test_data.items()}
@@ -123,16 +139,22 @@ def pipeline(ts_data, model, train_data, test_data, ITR=5000):
         for i, ts in enumerate(ts_data):
             posts_dict = get_posts(model.params, model.posts, i=i)
             y_pred = predict(model.params[i]["y"], posts_dict, test_data_dict)
+            
+            y_pred_mean = np.mean(y_pred, axis=0)[0]
+            y_pred_lower = np.percentile(y_pred,[CI_l,CI_u], axis=0)[0][0]
+            y_pred_upper = np.percentile(y_pred,[CI_l,CI_u], axis=0)[1][0]
+                 
             y_true = ts["future"]["y_scaled"].as_matrix()
         
             predictions.append(pd.DataFrame({"ds": ts["future"]["ds"].copy(), 
-                                             "y_scaled_pred": y_pred}))
-            metrics.append(evaluate(y_true, y_pred))
-            plt.plot(ts["future"]["ds"], y_true)
-            plt.plot(ts["future"]["ds"], y_pred)
-            plt.xticks(rotation=90)
-            plt.show()
+                                             "y_scaled_pred": y_pred_mean}))
+            metrics.append(evaluate(y_true, y_pred_mean))
+            # plt.plot(ts["future"]["ds"], y_true)
+            # plt.plot(ts["future"]["ds"], y_pred_mean)
+            # plt.plot(ts["future"]["ds"], y_pred_lower,lw=4)
+            # plt.plot(ts["future"]["ds"], y_pred_upper,lw=4)
+            # # plt.fill_between(ts["future"].index, y_pred_lower,y_pred_upper,color='k',alpha=.5)
+            # plt.xticks(rotation=90)
+            # plt.show()
         return predictions, metrics
-
-
 
