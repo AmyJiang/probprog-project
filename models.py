@@ -16,10 +16,12 @@ def build_data(name, N_TS, S, K):
     
    
 def init_km(df):
-    i0, i1 = df['ds'].idxmin(), df['ds'].idxmax()
-    T = df['t'].iloc[i1] - df['t'].iloc[i0]
-    k = (df['y_scaled'].iloc[i1] - df['y_scaled'].iloc[i0]) / T
-    m = df['y_scaled'].iloc[i0] -  k * df['t'].iloc[i0]
+    #i0, i1 = df['ds'].idxmin(), df['ds'].idxmax()
+    #T = df['t'].iloc[i1] - df['t'].iloc[i0]
+    #k = (df['y_scaled'].iloc[i1] - df['y_scaled'].iloc[i0]) / T
+    #m = df['y_scaled'].iloc[i0] -  k * df['t'].iloc[i0]
+    k = 0
+    m = df['y_scaled'].median()
     return (k, m)
                                 
 class Model1(object):
