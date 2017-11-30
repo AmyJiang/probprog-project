@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from collections import defaultdict
 from datetime import timedelta
- 
+
 holiday_en_us = pd.DataFrame({
   'holiday': 'US public holiday',
   'ds': pd.to_datetime(['2015-01-01', '2015-01-19', '2015-05-25', '2015-07-03', '2015-09-07', '2015-11-26', '2015-11-27', '2015-12-25', '2016-01-01', '2016-01-18', '2016-05-30', '2016-07-04', '2016-09-05', '2016-11-11', '2016-11-24', '2016-12-26', '2017-01-01', '2017-01-02', '2017-01-16', '2017-05-29', '2017-07-04', '2017-09-04', '2017-11-10', '2017-11-23', '2017-12-25', '2015-02-14', '2016-02-14', '2017-02-14']),
@@ -17,17 +17,17 @@ def setup_dataframe(df):
     # Log tranform views to y
     df["y"] = df["views"].astype(float)
     df["y"] = np.log(df["y"])
-    
+
     df = df[df['y'].notnull()].copy()
     df['y'] = pd.to_numeric(df['y'])
     if np.isinf(df['y'].values).any():
         raise ValueError("Found infinity in column y")
-    
+
     # transform ds to pd.DateTime
     df['ds'] = pd.to_datetime(df['ds'])
     if df['ds'].isnull().any():
         raise ValueError("Found NaN in column ds")
-    
+
     df = df.sort_values('ds')
     df.reset_index(inplace=True, drop=True)
     return df
@@ -43,12 +43,12 @@ def fourier_series(dates, period, order):
         for i in range(order)
         for fun in (np.sin, np.cos)
     ])
-    
+
 def seasonal_feature(dates, period, fourier_order, name):
     features = fourier_series(dates, period, fourier_order)
     columns = ['{}_delim_{}'.format(name, i + 1) for i in range(features.shape[1])]
     return pd.DataFrame(features, columns=columns)
-    
+
 def make_seasonality_features(history, yearly=True, weekly=True, holidays=None, prior_scale=5.0):
     start = history['ds'].min()
     end = history['ds'].max()
@@ -57,7 +57,7 @@ def make_seasonality_features(history, yearly=True, weekly=True, holidays=None, 
 
     seasonal_features = []
     prior_scales = []
-    
+
     # Year seasonality
     # yearly_disable = end - start < pd.Timedelta(days=730)
     if yearly:
@@ -67,8 +67,8 @@ def make_seasonality_features(history, yearly=True, weekly=True, holidays=None, 
                                     name='yearly')
         seasonal_features.append(features)
         prior_scales.extend([prior_scale] * features.shape[1])
-        
-    
+
+
     # Weekly seasonality
     # weekly_disable = ((end - start < pd.Timedelta(weeks=2)) or
     #                  (min_dt >= pd.Timedelta(weeks=1)))
@@ -79,12 +79,13 @@ def make_seasonality_features(history, yearly=True, weekly=True, holidays=None, 
                                     name='weekly')
         seasonal_features.append(features)
         prior_scales.extend([prior_scale] * features.shape[1])
-        
+
+
     if holidays is not None:
         features, holiday_priors = make_holiday_features(history['ds'], holidays)
         seasonal_features.append(features)
         prior_scales.extend(holiday_priors)
-                                
+
     if len(seasonal_features) == 0:
         seasonal_features.append(
             pd.DataFrame({'zeros': np.zeros(history.shape[0])})
@@ -97,7 +98,7 @@ def make_holiday_features(dates, holidays, holidays_prior_scale=10.0):
     holiday_features: pd.DataFrame with a column for each holiday.
     prior_scale_list: List of prior scales for each holiday column.
     """
-    
+
     expanded_holidays = defaultdict(lambda: np.zeros(dates.shape[0]))
     prior_scales = {}
     # Makes an index so we can perform `get_loc` below.
@@ -115,7 +116,7 @@ def make_holiday_features(dates, holidays, holidays_prior_scale=10.0):
             uw = int(row.get('upper_window', 0))
         except ValueError:
             uw = 0
-                
+
         ps = float(row.get('prior_scale', holidays_prior_scale))
         if np.isnan(ps):
             ps = float(holidays_prior_scale)
@@ -136,21 +137,21 @@ def make_holiday_features(dates, holidays, holidays_prior_scale=10.0):
             else:
                 # Access key to generate value
                 expanded_holidays[key]
-        
+
     holiday_features = pd.DataFrame(expanded_holidays)
     prior_scale_list = [
         prior_scales[h.split('_delim_')[0]] for h in holiday_features.columns
     ]
     return holiday_features, prior_scale_list
-    
+
 def get_changepoints(history, n_changepoints=25):
     # Place potential changepoints evenly through first 80% of history
     # Return changepoints_t in t index
-    
+
     hist_size = np.floor(history.shape[0] * 0.8)
     if n_changepoints == -1 or n_changepoints + 1 > hist_size:
         n_changepoints = hist_size - 1
-            
+
     # set changepoints in df['ds'] timestamps
     if n_changepoints == 0:
         changepoints = [] # no changepoints
@@ -161,7 +162,7 @@ def get_changepoints(history, n_changepoints=25):
             .astype(np.int)
         )
         changepoints = history.iloc[cp_indexes]['ds'].tail(-1)
-    
+
     # get changepoints_t in scaled t index
     if len(changepoints) > 0:
         start = history['ds'].min()
@@ -169,9 +170,9 @@ def get_changepoints(history, n_changepoints=25):
         changepoints_t = np.sort(np.array((changepoints - start) / t_scale))
     else:
         changepoints_t = np.array([0])  # dummy changepoint
-    return changepoints_t 
+    return changepoints_t
 
-def get_changepoint_matrix(df, changepoints_t): 
+def get_changepoint_matrix(df, changepoints_t):
     A = np.zeros((df.shape[0], len(changepoints_t)))
     for i, t_i in enumerate(changepoints_t):
         A[df['t'].values >= t_i, i] = 1
