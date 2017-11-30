@@ -52,7 +52,7 @@ def split_train_test(df, sdate=pd.datetime(2017, 7, 10), edate=None):
     return (history, future, y_scale)
 
 # Extract features
-def extract_features(df, changepoints_t=None, holidays=None):
+def extract_features(df, n_changepoints=25, changepoints_t=None, holidays=None):
     seasonal_features, prior_scales = make_seasonality_features(df,
                                                             yearly=True, weekly=True,
                                                             holidays=None)
@@ -67,7 +67,7 @@ def extract_features(df, changepoints_t=None, holidays=None):
         print("\t[+] %d Holidays" % len(holiday_ds), holiday_ds)
 
     if changepoints_t is None:
-        changepoints_t = get_changepoints(df, n_changepoints=25)
+        changepoints_t = get_changepoints(df, n_changepoints=n_changepoints)
     # number of change points
     print("[+] %d changepoints" % len(changepoints_t))
     print("\t", changepoints_t)
@@ -136,6 +136,7 @@ def pipeline(ts_data, model, train_data, test_data,
         metrics = []
         nburn = int(ITR / 2)
         stride = 10
+        model.post_params = {}
         for i, ts in enumerate(ts_data):
             sess = ed.get_session()
             post_params = {
@@ -144,6 +145,7 @@ def pipeline(ts_data, model, train_data, test_data,
                 "beta": model.posts[i]["beta"].params.eval()[nburn:ITR:stride],
                 "delta": model.posts[i]["delta"].params.eval()[nburn:ITR:stride]
             }
+            model.post_params[i] = post_params
             df =  make_future_dataframe(ts["history"], ts["future"].shape[0])
             df = predict_fixed(df, post_params, test_data)
             

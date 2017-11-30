@@ -49,7 +49,7 @@ def seasonal_feature(dates, period, fourier_order, name):
     columns = ['{}_delim_{}'.format(name, i + 1) for i in range(features.shape[1])]
     return pd.DataFrame(features, columns=columns)
 
-def make_seasonality_features(history, yearly=True, weekly=True, holidays=None, prior_scale=5.0):
+def make_seasonality_features(history, yearly=True, weekly=True, holidays=None, prior_scale=0.5):
     start = history['ds'].min()
     end = history['ds'].max()
     dt = history['ds'].diff()

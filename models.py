@@ -104,7 +104,7 @@ class Model3(object):
                 gamma = tf.multiply(-self.data["t_change"], delta)
                 trend_loc = (k + ed.dot(self.data["A"], delta)) * self.data["t"] + \
                             (m + ed.dot(self.data["A"], gamma))
-                beta = Normal(loc=tf.zeros(self.K), scale=self.data["sigmas"]*tf.ones(self.K))
+                beta = Normal(loc=gbeta, scale=self.data["sigmas"]*tf.ones(self.K))
                 seas_loc = ed.dot(self.data["X"], beta)
                 y = Normal(loc = trend_loc + seas_loc, scale = sigma_obs)
                 self.params[i] = {
@@ -137,6 +137,8 @@ class Model3(object):
                     "tau": qtau,
                 }
 
+           
+
 class Model4(object):
     def set_values(self, N_TS, S, K):
         self.N_TS = N_TS
@@ -148,14 +150,11 @@ class Model4(object):
         with tf.name_scope(self.name):
             self.data = build_data(self.name, self.N_TS, self.S, self.K)
             self.params = {}
-
-            # Common prior
-            gk = Normal(loc=tf.zeros(1), scale=5.0*tf.ones(1))     # initial slope
-            self.params[-1] = {"gk": gk}
-
-
+            
+            gk = 
+            self.params
             for i in range(self.N_TS):
-                k = Normal(loc=gk, scale=1.0*tf.ones(1))     # initial slope
+                k = Normal(loc=tf.zeros(1), scale=1.0*tf.ones(1))     # initial slope
                 m = Normal(loc=tf.zeros(1), scale=1.0*tf.ones(1))     # initial intercept
                 sigma_obs = Normal(loc=tf.zeros(1), scale=0.5*tf.ones(1))   # noise
                 tau = Normal(loc=tf.ones(1) * 0.05, scale=1.*tf.ones(1))    # changepoint prior scale
@@ -181,8 +180,6 @@ class Model4(object):
         self.ITR = ITR
         self.posts = {}
         with tf.name_scope(self.name):
-            qgk = Empirical(params=tf.Variable(tf.zeros([ITR, 1])))
-            self.posts[-1] = {"gk": qgk}
             for i in range(self.N_TS):
                 kinit, minit = init_km(ts_data[i]["history"])
                 print("[+] Initial slope / intercept: %f, %f" % (kinit, minit))
