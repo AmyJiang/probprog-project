@@ -4,14 +4,23 @@ from collections import defaultdict
 from datetime import timedelta
 
 holiday_en_us = pd.DataFrame({
-  'holiday': 'US public holiday',
-  'ds': pd.to_datetime(['2015-01-01', '2015-01-19', '2015-05-25', '2015-07-03', '2015-09-07', '2015-11-26', '2015-11-27', '2015-12-25', '2016-01-01', '2016-01-18', '2016-05-30', '2016-07-04', '2016-09-05', '2016-11-11', '2016-11-24', '2016-12-26', '2017-01-01', '2017-01-02', '2017-01-16', '2017-05-29', '2017-07-04', '2017-09-04', '2017-11-10', '2017-11-23', '2017-12-25', '2015-02-14', '2016-02-14', '2017-02-14']),
-  'lower_window': -1,
-  'upper_window': 0,
-  'prior_scale': 10.0
+    'holiday': 'US public holiday',
+    'ds': pd.to_datetime(['2015-01-01', '2015-01-19', '2015-05-25',
+                          '2015-07-03', '2015-09-07', '2015-11-26',
+                          '2015-11-27', '2015-12-25', '2016-01-01',
+                          '2016-01-18', '2016-05-30', '2016-07-04',
+                          '2016-09-05', '2016-11-11', '2016-11-24',
+                          '2016-12-26', '2017-01-01', '2017-01-02',
+                          '2017-01-16', '2017-05-29', '2017-07-04',
+                          '2017-09-04', '2017-11-10', '2017-11-23',
+                          '2017-12-25', '2015-02-14', '2016-02-14',
+                          '2017-02-14']),
+    'lower_window': -1,
+    'upper_window': 0,
+    'prior_scale': 10.0
 })
 
-# Helper functions
+
 def setup_dataframe(df):
     """ basic checks and setup """
     # Log tranform views to y
@@ -44,17 +53,16 @@ def fourier_series(dates, period, order):
         for fun in (np.sin, np.cos)
     ])
 
+
 def seasonal_feature(dates, period, fourier_order, name):
     features = fourier_series(dates, period, fourier_order)
-    columns = ['{}_delim_{}'.format(name, i + 1) for i in range(features.shape[1])]
+    columns = ['{}_delim_{}'.format(name, i + 1)
+               for i in range(features.shape[1])]
     return pd.DataFrame(features, columns=columns)
 
-def make_seasonality_features(history, yearly=True, weekly=True, holidays=None, prior_scale=0.5):
-    start = history['ds'].min()
-    end = history['ds'].max()
-    dt = history['ds'].diff()
-    min_dt = dt.iloc[dt.nonzero()[0]].min() # spacing
 
+def make_seasonality_features(history, yearly=True, weekly=True, holidays=None,
+                              prior_scale=0.5):
     seasonal_features = []
     prior_scales = []
 
@@ -68,7 +76,6 @@ def make_seasonality_features(history, yearly=True, weekly=True, holidays=None, 
         seasonal_features.append(features)
         prior_scales.extend([prior_scale] * features.shape[1])
 
-
     # Weekly seasonality
     # weekly_disable = ((end - start < pd.Timedelta(weeks=2)) or
     #                  (min_dt >= pd.Timedelta(weeks=1)))
@@ -80,9 +87,9 @@ def make_seasonality_features(history, yearly=True, weekly=True, holidays=None, 
         seasonal_features.append(features)
         prior_scales.extend([prior_scale] * features.shape[1])
 
-
     if holidays is not None:
-        features, holiday_priors = make_holiday_features(history['ds'], holidays)
+        features, holiday_priors = make_holiday_features(history['ds'],
+                                                         holidays)
         seasonal_features.append(features)
         prior_scales.extend(holiday_priors)
 
@@ -92,6 +99,7 @@ def make_seasonality_features(history, yearly=True, weekly=True, holidays=None, 
         )
         prior_scales.append(1.0)
     return pd.concat(seasonal_features, axis=1), prior_scales
+
 
 def make_holiday_features(dates, holidays, holidays_prior_scale=10.0):
     """Construct a dataframe of holiday features. Returns:
@@ -133,7 +141,7 @@ def make_holiday_features(dates, holidays, holidays_prior_scale=10.0):
                                          '+' if offset >= 0 else '-',
                                          abs(offset))
             if loc is not None:
-                expanded_holidays[key][loc] = 1.0 # binary features
+                expanded_holidays[key][loc] = 1.0  # binary features
             else:
                 # Access key to generate value
                 expanded_holidays[key]
@@ -143,6 +151,7 @@ def make_holiday_features(dates, holidays, holidays_prior_scale=10.0):
         prior_scales[h.split('_delim_')[0]] for h in holiday_features.columns
     ]
     return holiday_features, prior_scale_list
+
 
 def get_changepoints(history, n_changepoints=25):
     # Place potential changepoints evenly through first 80% of history
@@ -154,7 +163,7 @@ def get_changepoints(history, n_changepoints=25):
 
     # set changepoints in df['ds'] timestamps
     if n_changepoints == 0:
-        changepoints = [] # no changepoints
+        changepoints = []  # no changepoints
     else:
         cp_indexes = (
             np.linspace(0, hist_size, n_changepoints + 1)
@@ -171,6 +180,7 @@ def get_changepoints(history, n_changepoints=25):
     else:
         changepoints_t = np.array([0])  # dummy changepoint
     return changepoints_t
+
 
 def get_changepoint_matrix(df, changepoints_t):
     A = np.zeros((df.shape[0], len(changepoints_t)))
