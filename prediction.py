@@ -61,12 +61,37 @@ def predict_fixed(df, params, data, nsample=500):
     # predict trend
     df['trend'] = piecewise_linear(np.array(df['t']),
                                    deltas, k, m, data["t_change"])
+
     # predict seasonal components
     seasonal_components = predict_seasonal_components(df, params, data)
-    # TODO: intervals = predict_uncertainty(df)
 
     df = pd.concat([df, seasonal_components], axis=1)
     df['y'] = df['trend'] + df['seasonal']
+    return df
+
+
+def predict_uncertainty(df, params, data, interval_width=0.8):
+    lower_p = 100 * (1.0 - interval_width) / 2
+    upper_p = 100 * (1.0 + interval_width) / 2
+
+    trends = []
+    ypreds = []
+    for i, (k, m, d) in enumerate(zip(params["k"],
+                                      params["m"], params["delta"])):
+        tarray = np.array(df['t'])
+        t = piecewise_linear(tarray, d, k, m, data["t_change"])
+        seas = predict_seasonal_components(df, params, data)
+        trends.append(t)
+        ypreds.append(t + seas["seasonal"])
+
+    trends = np.vstack(trends)
+    ypreds = np.vstack(ypreds)
+    df = pd.DataFrame({
+        "trend_lower": np.nanpercentile(trends, lower_p, axis=0),
+        "trend_upper": np.nanpercentile(trends, upper_p, axis=0),
+        "y_lower": np.nanpercentile(ypreds, lower_p, axis=0),
+        "y_upper": np.nanpercentile(ypreds, upper_p, axis=0)
+    })
     return df
 
 

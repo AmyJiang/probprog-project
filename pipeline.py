@@ -131,7 +131,7 @@ def pipeline(ts_data, model, train_data, test_data,
         predictions = []
         metrics = []
         nburn = int(ITR / 2)
-        stride = 10
+        stride = 5
         model.post_params = {}
         for i, ts in enumerate(ts_data):
             sess = ed.get_session()
