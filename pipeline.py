@@ -2,7 +2,7 @@ import edward as ed
 import numpy as np
 import tensorflow as tf
 import pandas as pd
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 from utils import get_changepoint_matrix, get_changepoints, \
     make_seasonality_features
@@ -149,11 +149,11 @@ def pipeline(ts_data, model, train_data, test_data,
             y_true = ts["future"]["y_scaled"].as_matrix()
             metrics.append(evaluate(y_true, df["y"], prefix=model.name))
 
-            plt.plot(ts["future"]["ds"], ts["future"]["y_scaled"],
-                     lw=4, color='b')
-            plt.plot(ts["future"]["ds"], df["y"], color='r')
-            plt.xticks(rotation=90)
-            plt.show()
+            # plt.plot(ts["future"]["ds"], ts["future"]["y_scaled"],
+            #          lw=4, color='b')
+            # plt.plot(ts["future"]["ds"], df["y"], color='r')
+            # plt.xticks(rotation=90)
+            # plt.show()
             # plt.plot(ts["future"]["ds"], y_true)
             # plt.plot(ts["future"]["ds"], y_pred_mean)
             # plt.plot(ts["future"]["ds"], y_pred_lower,lw=4)
