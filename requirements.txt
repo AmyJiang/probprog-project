@@ -53,7 +53,7 @@ python-dateutil==2.6.1    # via jupyter-client, matplotlib, pandas
 pytz==2017.2              # via matplotlib, pandas
 pyzmq==16.0.2             # via jupyter-client
 qtconsole==4.3.1          # via jupyter
-seaborn==0.8.1
+seaborn==0.7.1
 simplegeneric==0.8.1      # via ipython
 six==1.10.0
 tensorflow-tensorboard==0.1.6  # via tensorflow
