@@ -44,10 +44,10 @@ def split_train_test(df, sdate=pd.datetime(2017, 7, 10), edate=None):
     future['t'] = (future['ds'] - t_start) / t_scale
     future['y_scaled'] = future['y'] / y_scale
 
-    plt.plot(history['ds'],history['y'])
-    plt.plot(future['ds'],future['y'])
-    plt.xticks(rotation=90)
-    plt.show()
+#    plt.plot(history['ds'],history['y'])
+#    plt.plot(future['ds'],future['y'])
+#    plt.xticks(rotation=90)
+#    plt.show()
 
     return (history, future, y_scale)
 
@@ -79,14 +79,13 @@ def extract_features(df, n_changepoints=25, changepoints_t=None, holidays=None):
         't_change': changepoints_t
     }
 
-def evaluate(y_true, y_pred):
+def evaluate(y_true, y_pred, prefix=""):
     mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100
     smape = np.mean(np.abs((y_true - y_pred)) / (np.abs((y_true + y_pred)))) * 200
     mse = ((y_true - y_pred) ** 2).mean()
-    print("MAPE = %f" % mape)
-    print("SMAPE = %f" % smape)
-    print("MSE = %f" % mse)
-    return {"MAPE": mape, "SMAPE": smape, "MSE": mse}
+    return {prefix+"-MAPE": mape, 
+            prefix+"-SMAPE": smape, 
+            prefix+"-MSE": mse}
 
 #def predict(y, posts_dict, data_dict, SAMPLE=500):
 #    sess = ed.get_session()
@@ -151,7 +150,7 @@ def pipeline(ts_data, model, train_data, test_data,
             
             predictions.append(df)
             y_true = ts["future"]["y_scaled"].as_matrix()
-            metrics.append(evaluate(y_true, df["y"]))
+            metrics.append(evaluate(y_true, df["y"], prefix=model.name))
 
             plt.plot(ts["future"]["ds"], ts["future"]["y_scaled"], lw=4, color='b')
             plt.plot(ts["future"]["ds"], df["y"], color='r')

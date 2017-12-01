@@ -151,10 +151,10 @@ class Model4(object):
             self.data = build_data(self.name, self.N_TS, self.S, self.K)
             self.params = {}
             
-            gk = 
-            self.params
+            gk = Normal(loc=tf.zeros(1), scale=0.05*tf.ones(1))     # initial slope
+            self.params[-1] = {"gk": gk}
             for i in range(self.N_TS):
-                k = Normal(loc=tf.zeros(1), scale=1.0*tf.ones(1))     # initial slope
+                k = Normal(loc=gk, scale=1.0*tf.ones(1))     # initial slope
                 m = Normal(loc=tf.zeros(1), scale=1.0*tf.ones(1))     # initial intercept
                 sigma_obs = Normal(loc=tf.zeros(1), scale=0.5*tf.ones(1))   # noise
                 tau = Normal(loc=tf.ones(1) * 0.05, scale=1.*tf.ones(1))    # changepoint prior scale
@@ -182,7 +182,7 @@ class Model4(object):
         with tf.name_scope(self.name):
             for i in range(self.N_TS):
                 kinit, minit = init_km(ts_data[i]["history"])
-                print("[+] Initial slope / intercept: %f, %f" % (kinit, minit))
+                # print("[+] Initial slope / intercept: %f, %f" % (kinit, minit))
                 qbeta = Empirical(params=tf.Variable(tf.zeros([ITR, self.K])))
                 qk = Empirical(params=tf.Variable(kinit * tf.ones([ITR, 1])))
                 qm = Empirical(params=tf.Variable(minit * tf.ones([ITR, 1])))

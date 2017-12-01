@@ -53,7 +53,6 @@ def predict_fixed(df, params, data, nsample=500):
     k = np.nanmean(params['k'])
     m = np.nanmean(params['m'])
     deltas = np.nanmean(params['delta'], axis=0)
-    print(k, m, deltas)
     
     # predict trend
     df['trend'] = piecewise_linear(np.array(df['t']), deltas, k, m, data["t_change"])
