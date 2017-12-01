@@ -1,6 +1,6 @@
 from datetime import timedelta
 from pipeline import extract_features, split_train_test, pipeline
-from pandas import pd
+import pandas as pd
 
 
 def cross_validation(ts_dfs, model, ITR=5000,
