@@ -134,12 +134,12 @@ def pipeline(ts_data, model, train_data, test_data,
         stride = 5
         model.post_params = {}
         for i, ts in enumerate(ts_data):
-            sess = ed.get_session()
             post_params = {
                 "k": model.posts[i]["k"].params.eval()[nburn:ITR:stride],
                 "m": model.posts[i]["m"].params.eval()[nburn:ITR:stride],
                 "beta": model.posts[i]["beta"].params.eval()[nburn:ITR:stride],
-                "delta": model.posts[i]["delta"].params.eval()[nburn:ITR:stride]
+                "delta": model.posts[i]["delta"].params.eval()[
+                    nburn:ITR:stride]
             }
             model.post_params[i] = post_params
             df = make_future_dataframe(ts["history"], ts["future"].shape[0])
