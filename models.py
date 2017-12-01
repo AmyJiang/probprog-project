@@ -69,7 +69,7 @@ class Model1(object):
         with tf.name_scope(self.name):
             for i in range(self.N_TS):
                 kinit, minit = init_km(ts_data[i]["history"])
-                print("[+] Initial slope / intercept: %f, %f" % (kinit, minit))
+                # print("[+] Initial slope / intercept: %f, %f" % (kinit, minit))
                 qbeta = Empirical(params=tf.Variable(tf.zeros([ITR, self.K])))
                 qk = Empirical(params=tf.Variable(kinit * tf.ones([ITR, 1])))
                 qm = Empirical(params=tf.Variable(minit * tf.ones([ITR, 1])))
